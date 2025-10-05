@@ -1,0 +1,86 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input AddMovieInput {
+  poster: String!
+  releaseYear: Float!
+  title: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input ListFilterInput {
+  page: Float!
+  size: Float!
+}
+
+input LoginUserInput {
+  email: String!
+  password: String!
+}
+
+type Movie {
+  _id: ID!
+  createdAt: DateTime
+  createdBy: String
+  poster: String!
+  releaseYear: Float!
+  title: String!
+  updatedAt: DateTime
+}
+
+type MoviesList {
+  movies: [Movie!]!
+  totalMovies: Int!
+  totalPages: Int!
+}
+
+type Mutation {
+  """Add a new movie"""
+  addNewMovie(addMovieInput: AddMovieInput!): Movie!
+
+  """Login a user"""
+  loginUser(loginUserInput: LoginUserInput!): TokenResponse!
+
+  """Create a new user"""
+  registerUser(registerUserInput: RegisterUserInput!): User!
+
+  """Resume session with token"""
+  resumeToken(token: String!): TokenResponse!
+
+  """Upload an image to Cloudinary"""
+  uploadImage(file: String!): String!
+}
+
+type Query {
+  """List movies"""
+  listMovies(listFilterInput: ListFilterInput!): MoviesList!
+
+  """Verify a JWT token"""
+  verifyToken(token: String!): User!
+}
+
+input RegisterUserInput {
+  email: String!
+  password: String!
+}
+
+type TokenResponse {
+  accessToken: String!
+  user: User!
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+type User {
+  _id: ID!
+  createdAt: DateTime
+  email: String!
+  name: String!
+  updatedAt: DateTime
+}
