@@ -5,16 +5,16 @@
 
     WORKDIR /app
     
-    # Copy package files and install production dependencies
-    COPY package.json yarn.lock ./
-    RUN yarn install --frozen-lockfile --production=false
+    # Copy package files and install dependencies
+    COPY package.json package-lock.json ./
+    # Install ALL dependencies (dev and prod) for building
+    RUN npm install
     
     # Copy source code
     COPY . .
     
     # Build the Next.js application
-    # This generates the .next folder
-    RUN yarn build
+    RUN npm run build
     
     # --------------------
     # Stage 2: Create the final, lean runtime image
@@ -31,16 +31,17 @@
     # Set the working directory to /app
     WORKDIR /app
     
-    # Copy the built application files from the builder stage
-    # Copy only necessary files for a production run
+    # Copy only production dependencies from the builder stage
+    # We only need 'next' and its peer dependencies for running
     COPY --from=builder /app/package.json ./package.json
+    COPY --from=builder /app/node_modules ./node_modules
+    # Copy built application files
     COPY --from=builder /app/next.config.js ./next.config.js
     COPY --from=builder /app/public ./public
     COPY --from=builder /app/.next ./.next
-    COPY --from=builder /app/node_modules ./node_modules
     
     # Expose the default Next.js production port
     EXPOSE 3000
     
     # Start the Next.js server in production mode
-    CMD ["yarn", "start"]
+    CMD ["npm", "start"]

@@ -6,12 +6,13 @@
     WORKDIR /app
     
     # Copy and install dependencies
-    COPY package.json yarn.lock ./
-    RUN yarn install --frozen-lockfile
+    COPY package.json package-lock.json ./
+    # Install ALL dependencies for building
+    RUN npm install
     
     # Copy source code and build (transpile TS to JS)
     COPY . .
-    RUN yarn build
+    RUN npm run build
     
     # --------------------
     # Stage 2: Create the final, lean runtime image
@@ -21,8 +22,8 @@
     WORKDIR /app
     
     # Install only production dependencies
-    COPY package.json yarn.lock ./
-    RUN yarn install --frozen-lockfile --production=true
+    COPY package.json package-lock.json ./
+    RUN npm install --only=production
     
     # Copy the compiled JS files and necessary assets from the builder stage
     COPY --from=builder /app/dist ./dist
