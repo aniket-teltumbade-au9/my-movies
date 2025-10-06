@@ -25,7 +25,7 @@ function makeClient() {
     });
 
     const httpLink = new HttpLink({
-        uri: "http://localhost:5000/graphql",
+        uri: "http://server:5000/graphql",
     });
 
     return new NextSSRApolloClient({

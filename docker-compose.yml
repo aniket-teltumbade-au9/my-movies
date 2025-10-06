@@ -1,49 +1,40 @@
-version: '3.8'
-
 services:
+  # ---------------------
+  # NESTJS BACKEND SERVICE (movie-app-server) - Port 5000
+  # MUST be defined first so 'client' can reference it in env
+  # ---------------------
+  server:
+    container_name: movie_app_server
+    # Use the production Dockerfile context
+    build:
+      context: ./movie-app-server
+      dockerfile: Dockerfile
+    # Map host:container ports. Open 5000 externally for testing/direct access.
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+    # Enable restart policy for reliability
+    restart: always
+
   # ---------------------
   # NEXT.JS FRONTEND SERVICE (movie-app-client) - Port 3000
   # ---------------------
   client:
     container_name: movie_app_client
-    # Context points to the Next.js directory
     build:
       context: ./movie-app-client
       dockerfile: Dockerfile
-    # Map host:container ports
+    # Map host:container ports. Open 3000 externally for browser access.
     ports:
       - "3000:3000"
-    # Mount volumes for hot-reloading in development
-    volumes:
-      - ./movie-app-client:/app
-      - /app/node_modules # Anonymous volume to preserve container's node_modules
     environment:
-      # Ensure Next.js runs the dev server
-      NODE_ENV: development
-    command: yarn dev
-    
-  # ---------------------
-  # NESTJS BACKEND SERVICE (movie-app-server) - Port 5000
-  # ---------------------
-  server:
-    container_name: movie_app_server
-    # Context points to the NestJS directory
-    build:
-      context: ./movie-app-server
-      dockerfile: Dockerfile
-    # Map host:container ports
-    ports:
-      - "5000:5000"
-    # Mount volumes for hot-reloading in development
-    volumes:
-      - ./movie-app-server:/app
-      - /app/node_modules
-    environment:
-      # Set the port within the container (optional if hardcoded in main.ts)
-      PORT: 5000 
-      NODE_ENV: development
-    # Run in dev/watch mode
-    command: yarn start:dev
-    # Ensure backend starts only after the client is ready (optional, but good practice)
+      NODE_ENV: production
+      # CRITICAL: Client needs to talk to the server container using its service name.
+      # The client should use 'server:5000' for internal API calls.
+      NEXT_PUBLIC_API_URL: http://server:5000
+    # Client depends on server availability
     depends_on:
-      - client
+      - server
+    restart: always
