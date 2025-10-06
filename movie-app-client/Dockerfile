@@ -1,3 +1,7 @@
+# ============================================
+# NEXT.JS CLIENT DOCKERFILE (Optimized)
+# ============================================
+
 # --------------------
 # Stage 1: Build the Next.js application
 # --------------------
@@ -5,43 +9,48 @@
 
     WORKDIR /app
     
-    # Copy package files and install dependencies
+    # Copy package files
     COPY package.json package-lock.json ./
-    # Install ALL dependencies (dev and prod) for building
-    RUN npm install
+    
+    # Install dependencies for building
+    RUN npm ci
     
     # Copy source code
     COPY . .
     
-    # Build the Next.js application
+    # Build with reduced memory usage
+    ENV NODE_OPTIONS="--max-old-space-size=512"
     RUN npm run build
     
     # --------------------
-    # Stage 2: Create the final, lean runtime image
+    # Stage 2: Production runtime (MINIMAL)
     # --------------------
     FROM node:20-alpine AS runner
     
-    # Set environment variables for Next.js production
-    ENV NODE_ENV production
+    ENV NODE_ENV=production
+    ENV NODE_OPTIONS="--max-old-space-size=512"
     
-    # Next.js must be run as a non-root user for security best practices
+    # Create non-root user
     RUN addgroup --system app && adduser --system -G app app
-    USER app
     
-    # Set the working directory to /app
     WORKDIR /app
     
-    # Copy only production dependencies from the builder stage
-    # We only need 'next' and its peer dependencies for running
-    COPY --from=builder /app/package.json ./package.json
-    COPY --from=builder /app/node_modules ./node_modules
-    # Copy built application files
-    COPY --from=builder /app/next.config.js ./next.config.js
-    COPY --from=builder /app/public ./public
-    COPY --from=builder /app/.next ./.next
+    # Copy package files
+    COPY --from=builder --chown=app:app /app/package.json ./
+    COPY --from=builder --chown=app:app /app/package-lock.json ./
     
-    # Expose the default Next.js production port
+    # Install ONLY production dependencies (no dev dependencies)
+    RUN npm ci --only=production && npm cache clean --force
+    
+    # Copy only necessary build artifacts
+    COPY --from=builder --chown=app:app /app/next.config.js ./
+    COPY --from=builder --chown=app:app /app/public ./public
+    COPY --from=builder --chown=app:app /app/.next ./.next
+    
+    USER app
+    
     EXPOSE 3000
     
-    # Start the Next.js server in production mode
     CMD ["npm", "start"]
+    
+    
