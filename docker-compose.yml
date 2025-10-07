@@ -1,11 +1,7 @@
 services:
-  # ---------------------
-  # NESTJS BACKEND SERVICE (movie-app-server) - Port 5000
-  # MUST be defined first so 'client' can reference it in env
-  # ---------------------
   server:
-    container_name: movie_app_server
-    image: devhackzone/movie_app_server
+    container_name: youvie_server
+    image: devhackzone/youvie_server
     ports:
       - "5000:5000"
     env_file:
@@ -20,16 +16,12 @@ services:
   # NEXT.JS FRONTEND SERVICE (movie-app-client) - Port 3000
   # ---------------------
   client:
-    container_name: movie_app_client
-    image: devhackzone/movie_app_client
+    container_name: youvie_client
+    image: devhackzone/youvie_client
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      # CRITICAL: Client needs to talk to the server container using its service name.
-      # The client should use 'server:5000' for internal API calls.
-      NEXT_PUBLIC_API_URL: http://server:5000
-    # Client depends on server availability
     
     env_file:
       - ./client_env

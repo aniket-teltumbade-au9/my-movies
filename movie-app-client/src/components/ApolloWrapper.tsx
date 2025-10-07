@@ -25,7 +25,7 @@ function makeClient() {
     });
 
     const httpLink = new HttpLink({
-        uri: "http://server:5000/graphql",
+        uri: process.env.NEXT_PUBLIC_APP_GRAPHQL_URL,
     });
 
     return new NextSSRApolloClient({

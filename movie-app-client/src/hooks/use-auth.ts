@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LocalStorage } from "../utils/localStorage.strategy";
+import { toast } from "toaster";
 
 export interface User {
     email: string;
@@ -84,11 +85,9 @@ export const useAuth = () => {
 
         // Prevent navigation loops by only navigating once
         if (isAuthenticated && currentPathIsPublic) {
-            console.log('Redirecting authenticated user from public page to /movies');
             hasNavigated.current = true;
             router.replace('/movies');
         } else if (!isAuthenticated && !currentPathIsPublic) {
-            console.log('Redirecting unauthenticated user from protected page to /sign-in');
             hasNavigated.current = true;
             router.replace('/sign-in');
         }
@@ -100,24 +99,36 @@ export const useAuth = () => {
     }, [pathname]);
 
     const registerUser = async (user: User) => {
-        const { data, error } = await registerUserMutation({ variables: { input: user } });
-        if (error) throw error;
-        router.push("/sign-in")
-        return data;
+        try {
+            const { data, error } = await registerUserMutation({ variables: { input: user } });
+            if (error) throw error;
+            toast.success('User registered successfully');
+            router.push("/sign-in")
+            return data;
+        } catch (error) {
+            toast.error('Failed to register user');
+            throw error;
+        }
     };
 
     const loginUser = async (user: User) => {
-        const { data, error } = await loginMutation({ variables: { input: user } });
-        if (error) throw error;
-        const loginData = data as LoginResponse;
-        const accessToken = loginData?.loginUser?.accessToken;
-        const userData = loginData?.loginUser?.user;
+        try {
+            const { data, error } = await loginMutation({ variables: { input: user } });
+            if (error) throw error;
+            const loginData = data as LoginResponse;
+            const accessToken = loginData?.loginUser?.accessToken;
+            const userData = loginData?.loginUser?.user;
 
-        // Update all states together
-        setToken(accessToken);
-        setUser(userData);
-        setIsAuthenticated(true);
-        storage.set(accessToken);
+            // Update all states together
+            setToken(accessToken);
+            setUser(userData);
+            setIsAuthenticated(true);
+            storage.set(accessToken);
+            toast.success('Logged in successfully');
+        } catch (error) {
+            toast.error('Failed to login');
+            throw error;
+        }
     };
 
     const handleLogout = () => {

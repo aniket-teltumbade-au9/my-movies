@@ -8,6 +8,7 @@ import { useMutation } from "@apollo/client/react";
 import { UPLOAD_IMAGE } from "@/gql/file";
 import { ADD_MOVIE } from "@/gql/movie";
 import { MovieContext } from "@/Provider/movie-provider";
+import { toast } from "toaster";
 
 interface Inputs {
     title: string;
@@ -26,21 +27,22 @@ export default function CreateMovie() {
     const {
         register,
         handleSubmit,
-    } = useForm<Inputs>()
+        formState: { errors },
+    } = useForm<Inputs>({
+        mode: 'onBlur',
+    })
 
 
     const [uploadImage] = useMutation(UPLOAD_IMAGE);
     const [addMovie] = useMutation(ADD_MOVIE);
 
-    const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
         setLoading(true);
         try {
             let posterUrl = '';
 
             // Upload image first if a file is selected
             if (selectedFile) {
-                console.log('Uploading file:', selectedFile);
-
                 // Convert file to base64
                 const base64 = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
@@ -52,12 +54,10 @@ export default function CreateMovie() {
                     const uploadResult = await uploadImage({
                         variables: { file: base64 }
                     });
-                    console.log('Upload result:', uploadResult);
                     posterUrl = (uploadResult.data as UploadResponse).uploadImage;
-                    // Show success toast here
+                    toast.success('Image uploaded successfully');
                 } catch (uploadError) {
-                    console.error('Error uploading image:', uploadError);
-                    // Show error toast here
+                    toast.error('Failed to upload image');
                     setLoading(false);
                     return;
                 }
@@ -65,7 +65,7 @@ export default function CreateMovie() {
 
             // Create movie with the uploaded image URL
             try {
-                const movieResult = await addMovie({
+                await addMovie({
                     variables: {
                         input: {
                             title: data.title,
@@ -74,17 +74,14 @@ export default function CreateMovie() {
                         }
                     }
                 });
-                console.log('Movie created:', movieResult.data);
                 refetch();
                 router.push('/movies');
-                // Show success toast here
+                toast.success('Movie added successfully');
             } catch (movieError) {
-                console.error('Error creating movie:', movieError);
-                // Show error toast here
+                toast.error('Failed to add movie');
             }
         } catch (error) {
-            console.error('Unexpected error:', error);
-            // Show error toast here
+            toast.error('An unexpected error occurred');
         } finally {
             setLoading(false);
         }
@@ -109,20 +106,38 @@ export default function CreateMovie() {
                             <FormInput
                                 type="text"
                                 placeholder="Title"
-                                {...register("title")}
+                                {...register("title", {
+                                    required: "Title is required",
+                                    minLength: {
+                                        value: 1,
+                                        message: "Title cannot be empty"
+                                    }
+                                })}
                                 label="Title"
                                 id="title"
                             />
+                            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
                         </div>
 
                         <div className="w-full lg:w-auto">
                             <FormInput
                                 type="date"
-                                {...register("releaseYear")}
+                                {...register("releaseYear", {
+                                    required: "Publishing year is required",
+                                    validate: (value: string) => {
+                                        const year = parseInt(value.split('-')[0]);
+                                        const currentYear = new Date().getFullYear();
+                                        if (year < 1900 || year > currentYear) {
+                                            return `Year must be between 1900 and ${currentYear}`;
+                                        }
+                                        return true;
+                                    }
+                                })}
                                 label="Publishing Year"
                                 id="releaseYear"
                                 placeholder="Publishing year"
                             />
+                            {errors.releaseYear && <p className="text-red-500 text-sm mt-1">{errors.releaseYear.message}</p>}
                         </div>
 
                         <div className="flex gap-3 pt-6">
