@@ -10,9 +10,11 @@ const MovieListWrapper = dynamic(() => import('./MovieListWrapper'), {
 function MoviesPage() {
 
     return (
-        <MoviesProvider>
-            <MovieListWrapper />
-        </MoviesProvider>
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <MoviesProvider>
+                <MovieListWrapper />
+            </MoviesProvider>
+        </React.Suspense>
     )
 }
 

@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Your other Next.js configuration settings go here
+  // e.g., reactStrictMode: true, compiler: { ... }, images: { ... }
 
-const nextConfig: NextConfig = {
-  /* config options here */
+  // ⭐️ CRITICAL SETTING for Docker Standalone Mode ⭐️
+  output: 'standalone',
 };
 
-export default nextConfig;
+module.exports = nextConfig;

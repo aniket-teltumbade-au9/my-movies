@@ -1,49 +1,49 @@
-    # ============================================
-    # NESTJS SERVER DOCKERFILE (Optimized)
-    # ============================================
-    
-    # --------------------
-    # Stage 1: Build the NestJS application
-    # --------------------
-    FROM node:20-alpine AS builder
-    
-    WORKDIR /app
-    
-    # Copy package files
-    COPY package.json package-lock.json ./
-    
-    # Install all dependencies for building
-    RUN npm ci
-    
-    # Copy source code and build
-    COPY . .
-    RUN npm run build
-    
-    # --------------------
-    # Stage 2: Production runtime (MINIMAL)
-    # --------------------
-    FROM node:20-alpine AS runner
-    
-    WORKDIR /app
-    
-    ENV NODE_ENV=production
-    ENV PORT=5000
-    
-    # Create non-root user
-    RUN addgroup --system app && adduser --system -G app app
-    
-    # Copy package files
-    COPY --from=builder /app/package.json ./
-    COPY --from=builder /app/package-lock.json ./
-    
-    # Install ONLY production dependencies (no dev dependencies)
-    RUN npm ci --only=production && npm cache clean --force
-    
-    # Copy only the compiled output
-    COPY --from=builder --chown=app:app /app/dist ./dist
-    
-    USER app
-    
-    EXPOSE 5000
-    
-    CMD ["node", "dist/main"]
+# Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
+
+# Copy source files (needed for GraphQL schema generation)
+COPY --from=builder /app/src ./src
+
+# Change ownership to non-root user
+RUN chown -R nestjs:nodejs /app
+
+# Switch to non-root user
+USER nestjs
+
+# Expose port
+EXPOSE 5000
+
+# Start the application
+CMD ["node", "dist/main"]

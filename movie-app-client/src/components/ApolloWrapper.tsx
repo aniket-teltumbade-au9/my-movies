@@ -1,6 +1,6 @@
 "use client"; // This component must be a Client Component
 
-import { ApolloClient, ApolloLink, HttpLink } from "@apollo/client";
+import { ApolloLink, HttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import {
     ApolloNextAppProvider,

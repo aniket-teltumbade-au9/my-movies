@@ -1,10 +1,9 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Input from "../Input";
 import Button from "../Button";
 import { useAuth } from "@/hooks/use-auth";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { usePathname, useRouter } from "next/navigation";
 
 interface Inputs {
     email: string;

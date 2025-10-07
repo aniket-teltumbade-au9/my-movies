@@ -32,7 +32,7 @@ export default function LandingPage() {
           <div>
             <h3 className="text-[#fff] font-semibold text-[18px] mb-2">Track</h3>
             <p className="text-[#fff]/60 text-[14px] leading-[20px]">
-              Keep track of every movie you've watched and want to watch
+              Keep track of every movie you&apos;ve watched and want to watch
             </p>
           </div>
           <div>

@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
+import Image from "next/image";
 
 type Props = {
     onFileSelect?: (file: File) => void;
     onFileUpload?: (url: string) => void;
 };
 
-export default function FileUpload({ onFileSelect, onFileUpload }: Props) {
+export default function FileUpload({ onFileSelect }: Props) {
     const [preview, setPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +54,7 @@ export default function FileUpload({ onFileSelect, onFileUpload }: Props) {
             onClick={handleClick}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            className="w-full h-[300px] lg:h-[504px] rounded-[10px] border-2 border-dashed border-white bg-[#224957] flex flex-col items-center justify-center cursor-pointer hover:bg-[#2a5766] transition-colors"
+            className="w-full h-[300px] lg:h-[504px] rounded-[10px] border-2 border-dashed border-white bg-[#224957] flex flex-col items-center justify-center cursor-pointer hover:bg-[#2a5766] transition-colors relative"
         >
             <input
                 ref={fileInputRef}
@@ -64,7 +65,7 @@ export default function FileUpload({ onFileSelect, onFileUpload }: Props) {
             />
 
             {preview ? (
-                <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-[10px]" />
+                <Image src={preview!} alt="Preview" fill className="object-cover rounded-[10px]" />
             ) : (
                 <div className="flex flex-col items-center gap-8">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

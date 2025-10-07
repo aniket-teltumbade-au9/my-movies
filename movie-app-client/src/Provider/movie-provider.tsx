@@ -6,6 +6,12 @@ import { useQuery } from "@apollo/client/react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import React, { useEffect } from 'react';
 
+interface MoviesResponse {
+    listMovies: {
+        movies: Movie[];
+        totalPages: number;
+    };
+}
 
 interface MovieContextType {
     movies?: Movie[]; // Array of Movie objects
@@ -27,15 +33,15 @@ export default function MoviesProvider({ children }: { children: React.ReactNode
     const searchParams = useSearchParams()
     const page = parseInt(searchParams.get("page") || "1")
     const size = 10;
-    const { data, refetch } = useQuery(GET_MOVIES, { variables: { filter: { page: page - 1, size } } })
-    const movies = (data as any)?.listMovies?.movies
-    const totalPages = (data as any)?.listMovies?.totalPages ?? 0
+    const { data, refetch } = useQuery<MoviesResponse>(GET_MOVIES, { variables: { filter: { page: page - 1, size } } })
+    const movies = data?.listMovies?.movies
+    const totalPages = data?.listMovies?.totalPages ?? 0
 
     useEffect(() => {
         if (pathname === '/movies') {
             refetch()
         }
-    }, [pathname]);
+    }, [pathname, refetch]);
     const updatePage = (p: number) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('page', p.toString());

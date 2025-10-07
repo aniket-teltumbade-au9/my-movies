@@ -1,18 +1,21 @@
 import { useContext, useState } from "react";
 import FileUpload from "@/components/ui/FileUpload";
 import Button from "../Button";
-import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import FormInput from "../Input";
 import { useMutation } from "@apollo/client/react";
 import { UPLOAD_IMAGE } from "@/gql/file";
 import { ADD_MOVIE } from "@/gql/movie";
-import SignInForm from "../forms/SignInForm";
 import { MovieContext } from "@/Provider/movie-provider";
+
 interface Inputs {
     title: string;
     releaseYear: string;
+}
+
+interface UploadResponse {
+    uploadImage: string;
 }
 
 export default function CreateMovie() {
@@ -23,7 +26,6 @@ export default function CreateMovie() {
     const {
         register,
         handleSubmit,
-        formState: { errors },
     } = useForm<Inputs>()
 
 
@@ -46,29 +48,43 @@ export default function CreateMovie() {
                     reader.onerror = reject;
                     reader.readAsDataURL(selectedFile);
                 });
-                const uploadResult = await uploadImage({
-                    variables: { file: base64 }
-                });
-                console.log('Upload result:', uploadResult);
-                posterUrl = (uploadResult.data as any).uploadImage;
+                try {
+                    const uploadResult = await uploadImage({
+                        variables: { file: base64 }
+                    });
+                    console.log('Upload result:', uploadResult);
+                    posterUrl = (uploadResult.data as UploadResponse).uploadImage;
+                    // Show success toast here
+                } catch (uploadError) {
+                    console.error('Error uploading image:', uploadError);
+                    // Show error toast here
+                    setLoading(false);
+                    return;
+                }
             }
 
             // Create movie with the uploaded image URL
-            const movieResult = await addMovie({
-                variables: {
-                    input: {
-                        title: data.title,
-                        releaseYear: parseInt(data.releaseYear),
-                        poster: posterUrl
+            try {
+                const movieResult = await addMovie({
+                    variables: {
+                        input: {
+                            title: data.title,
+                            releaseYear: parseInt(data.releaseYear),
+                            poster: posterUrl
+                        }
                     }
-                }
-            });
-
-            console.log('Movie created:', movieResult.data);
-            refetch()
-            router.push('/movies');
+                });
+                console.log('Movie created:', movieResult.data);
+                refetch();
+                router.push('/movies');
+                // Show success toast here
+            } catch (movieError) {
+                console.error('Error creating movie:', movieError);
+                // Show error toast here
+            }
         } catch (error) {
-            console.error('Error creating movie:', error);
+            console.error('Unexpected error:', error);
+            // Show error toast here
         } finally {
             setLoading(false);
         }
@@ -117,8 +133,8 @@ export default function CreateMovie() {
                             >
                                 Cancel
                             </button>
-                            <Button type="submit" className="basis-1/2">
-                                Submit
+                            <Button disabled={loading} type="submit" className="basis-1/2">
+                                {loading ? "Adding" : "Submit"}
                             </Button>
                         </div>
                     </div>

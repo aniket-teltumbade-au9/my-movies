@@ -1,6 +1,6 @@
 import { LOGIN_QUERY, REGISTER_USER, VERIFY_TOKEN_QUERY } from "@/gql/auth";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LocalStorage } from "../utils/localStorage.strategy";
 
@@ -9,21 +9,38 @@ export interface User {
     password: string;
 }
 
+interface UserData {
+    _id: string;
+    email: string;
+    name?: string;
+}
+
+interface LoginResponse {
+    loginUser: {
+        accessToken: string;
+        user: UserData;
+    };
+}
+
+interface VerifyResponse {
+    verifyToken: UserData;
+}
+
 const isPublicPath = (pathname: string) => pathname.includes('sign');
 
 export const useAuth = () => {
-    const [user, setUser] = useState<any>();
-    const [token, setToken] = useState<string | null>();
+    const [user, setUser] = useState<UserData | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = checking
     const [registerUserMutation, { loading: registerLoading }] = useMutation(REGISTER_USER);
     const [loginMutation, { loading: loginLoading }] = useMutation(LOGIN_QUERY);
-    const storage = new LocalStorage("access_token");
+    const storage = useMemo(() => new LocalStorage("access_token"), []);
     const router = useRouter();
     const pathname = usePathname();
     const hasInitialized = useRef(false);
     const hasNavigated = useRef(false);
 
-    const { data, error, refetch, loading: verifyLoading } = useQuery(VERIFY_TOKEN_QUERY, {
+    const { data, error, loading: verifyLoading } = useQuery<VerifyResponse>(VERIFY_TOKEN_QUERY, {
         variables: { token },
         skip: !token,
     });
@@ -40,16 +57,14 @@ export const useAuth = () => {
                 setIsAuthenticated(false);
             }
         }
-    }, []);
+    }, [storage]);
 
     // Handle token verification result
     useEffect(() => {
         if (!token) return;
 
-        const queryData = data as any;
-
-        if (queryData?.verifyToken) {
-            setUser(queryData.verifyToken);
+        if (data?.verifyToken) {
+            setUser(data.verifyToken);
             setIsAuthenticated(true);
         } else if (error) {
             // Token is invalid
@@ -94,7 +109,7 @@ export const useAuth = () => {
     const loginUser = async (user: User) => {
         const { data, error } = await loginMutation({ variables: { input: user } });
         if (error) throw error;
-        const loginData = data as any;
+        const loginData = data as LoginResponse;
         const accessToken = loginData?.loginUser?.accessToken;
         const userData = loginData?.loginUser?.user;
 

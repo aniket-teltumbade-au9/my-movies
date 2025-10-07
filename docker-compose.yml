@@ -5,13 +5,11 @@ services:
   # ---------------------
   server:
     container_name: movie_app_server
-    # Use the production Dockerfile context
-    build:
-      context: ./movie-app-server
-      dockerfile: Dockerfile
-    # Map host:container ports. Open 5000 externally for testing/direct access.
+    image: devhackzone/movie_app_server
     ports:
       - "5000:5000"
+    env_file:
+      - ./server_env
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -23,10 +21,7 @@ services:
   # ---------------------
   client:
     container_name: movie_app_client
-    build:
-      context: ./movie-app-client
-      dockerfile: Dockerfile
-    # Map host:container ports. Open 3000 externally for browser access.
+    image: devhackzone/movie_app_client
     ports:
       - "3000:3000"
     environment:
@@ -35,6 +30,9 @@ services:
       # The client should use 'server:5000' for internal API calls.
       NEXT_PUBLIC_API_URL: http://server:5000
     # Client depends on server availability
+    
+    env_file:
+      - ./client_env
     depends_on:
       - server
     restart: always
